@@ -1,4 +1,8 @@
 #### Calculate daily burned area from file structure containing individual fires and corresponding geotiffs with burn dates. #### 
+# Andrew Latimer 
+# Input data is from Derek, and was produced using his modified Parks date of burn script here: https://github.com/LatimerLab/burn-date-and-weather
+# And data here https://ucdavis.app.box.com/file/1058589676906?s=qi6iuamk92pikevpmmt24dbaccpm0qkz (note I deleted the "dob-new" directory before running this since it has duplicate files in it)
+
 
 library(raster)
 library(terra)
@@ -12,7 +16,7 @@ data_dir <- "./data/dob-per-fire" # base of file tree with fire data in it
 cl <- makeCluster(8)
 registerDoParallel(cl)
 
-# annoying renaming hack to make all the geotiff names consistent. currently 2020 and 2021 have fire-specific geotif names; 2002-2019 don't 
+# renaming hack to make all the geotiff names consistent. currently 2020 and 2021 have fire-specific geotif names; 2002-2019 don't.
 new_tifs <- list.files("./data/dob-per-fire/dob-new-final", pattern = ".tif", recursive = TRUE)
 new_dirs <- list.dirs("./data/dob-per-fire/dob-new-final")
 new_dirs_length <- unlist(sapply(new_dirs, nchar))
@@ -68,12 +72,17 @@ origin_dates <- paste(daily_area$year, "01", "01", sep = "-")
 daily_area$date <- as_date(as.numeric(as.character(daily_area$julian_date)), origin = origin_dates)
 daily_area$month <- month(daily_area$date)
 
+# Save the results
+write.csv(daily_area, "./data/fire_daily_area_2002_2021.csv")
+
+
+# Quick checks of the results
 hist(daily_area$month)
 
 ggplot(daily_area[daily_area$state == "CA" & daily_area$year<2013,], aes(y = area, x = month)) + geom_bar(stat = "sum") 
 
 plot(sort((daily_area$area)))
 
-write.csv(daily_area, "./data/fire_daily_area_2002_2021.csv")
+
 
 
