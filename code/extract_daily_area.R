@@ -1,8 +1,13 @@
 #### Calculate daily burned area from file structure containing individual fires and corresponding geotiffs with burn dates. #### 
 
 library(raster)
+library(terra)
+library(doParallel)
 
 data_dir <- "./data/dob-per-fire" # base of file tree with fire data in it
+
+# set up parallelization
+registerDoParallel(cl, cores = 8)
 
 # annoying renaming hack to make all the geotiff names consistent. currently 2020 and 2021 have fire-specific geotif names; 2002-2019 don't 
 new_tifs <- list.files("./data/dob-per-fire/dob-new-final", pattern = ".tif", recursive = TRUE)
@@ -35,10 +40,16 @@ head(fires)
 
 # Pull up individual geotif for each fire and extract daily area burned info from it 
 
+# Check area of pixels
+r_terra <- rast(fires$fire.path[100])
+cellSize(r_terra) # 900 m^2 per pixel
+cell_area <- 900 / 10000 # area of each pixel in hectares
+
+daily_table <- list()
+foreac
 for (i in 1:n_fires) {
   r <- raster(fires$fire.path[i])
-  
-  
+  daily_table[[i]] <- as.data.frame(table(getValues(r)))
 }
 
 
