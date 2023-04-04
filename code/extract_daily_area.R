@@ -3,11 +3,14 @@
 library(raster)
 library(terra)
 library(doParallel)
+library(lubridate)
+library(ggplot2)
 
 data_dir <- "./data/dob-per-fire" # base of file tree with fire data in it
 
 # set up parallelization
-registerDoParallel(cl, cores = 8)
+cl <- makeCluster(8)
+registerDoParallel(cl)
 
 # annoying renaming hack to make all the geotiff names consistent. currently 2020 and 2021 have fire-specific geotif names; 2002-2019 don't 
 new_tifs <- list.files("./data/dob-per-fire/dob-new-final", pattern = ".tif", recursive = TRUE)
@@ -45,11 +48,32 @@ r_terra <- rast(fires$fire.path[100])
 cellSize(r_terra) # 900 m^2 per pixel
 cell_area <- 900 / 10000 # area of each pixel in hectares
 
-daily_table <- list()
-foreac
-for (i in 1:n_fires) {
+#daily_table <- foreach(i = 1:10, .combine = rbind) %dopar% as.data.frame(table(getValues(raster(fires$fire.path[i])))) 
+daily_area <- data.frame()
+for (i in 1:n_fires) { 
   r <- raster(fires$fire.path[i])
-  daily_table[[i]] <- as.data.frame(table(getValues(r)))
+  t <- as.data.frame(table(getValues(r)))
+  # add fire.id column 
+  t$fire.id <- fires$fire.id[i]
+  t$state <- fires$state[i]
+  t$year <- fires$year[i]
+  daily_area <- rbind(daily_area, t)
 }
+
+# Convert cell counts to area and julian dates to date 
+names(daily_area)[1] <- "julian_date"
+names(daily_area)[2] <- "pixel_count"
+daily_area$area <- daily_area$pixel_count * cell_area
+origin_dates <- paste(daily_area$year, "01", "01", sep = "-")
+daily_area$date <- as_date(as.numeric(as.character(daily_area$julian_date)), origin = origin_dates)
+daily_area$month <- month(daily_area$date)
+
+hist(daily_area$month)
+
+ggplot(daily_area[daily_area$state == "CA" & daily_area$year<2013,], aes(y = area, x = month)) + geom_bar(stat = "sum") 
+
+plot(sort((daily_area$area)))
+
+write.csv(daily_area, "./data/fire_daily_area_2002_2021.csv")
 
 
