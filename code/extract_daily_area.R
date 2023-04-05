@@ -6,15 +6,15 @@
 
 library(raster)
 library(terra)
-library(doParallel)
 library(lubridate)
 library(ggplot2)
 
-data_dir <- "./data/dob-per-fire" # base of file tree with fire data in it
-
 # set up parallelization
-cl <- makeCluster(8)
-registerDoParallel(cl)
+#library(doParallel) # tried to parallelize but it seems raster function can't be used within a %dopar% statement?
+#cl <- makeCluster(8)
+#registerDoParallel(cl)
+
+data_dir <- "./data/dob-per-fire" # base of file tree with fire data in it
 
 # renaming hack to make all the geotiff names consistent. currently 2020 and 2021 have fire-specific geotif names; 2002-2019 don't.
 new_tifs <- list.files("./data/dob-per-fire/dob-new-final", pattern = ".tif", recursive = TRUE)
@@ -35,9 +35,16 @@ year = state = fire.id = start.date = fire.path = vector(mode = "character")
 for (i in 1:n_fires) {
   file_info <- strsplit(f[i], split = "/")[[1]]
   year[i] <- file_info[2] 
+  if (year[i] == 2021) {
+    state[i] <- substr(file_info[3], start = 6, stop = 7)
+    fire.id[i] <- substr(file_info[3], start = 8, stop = 17)
+    start.date[i] <- NA
+  }
+  else {
   state[i] <- substr(file_info[3], start = 1, stop = 2)
   fire.id[i] <- substr(file_info[3], start = 3, stop = 13)
   start.date[i] <- substr(file_info[3], start = 14, stop = 21)
+  }
   fire.path[i] <- paste(data_dir, file_info[1], file_info[2], file_info[3], "dob.tif", sep = "/")
 }
 
@@ -79,12 +86,10 @@ write.csv(daily_area, "./data/fire_daily_area_2002_2021.csv")
 # Quick checks of the results
 hist(daily_area$month)
 
-ggplot(daily_area[daily_area$state == "CA" & daily_area$year<2013,], aes(y = area, x = month)) + geom_bar(stat = "sum") 
+ggplot(daily_area[daily_area$state == "CA" & daily_area$year>2012,], aes(y = area, x = month)) + geom_bar(stat = "sum") 
 
 plot(sort((daily_area$area)))
 
 
 ggplot(daily_area[daily_area$state == "CA" ,], aes(y = area, x = year)) + geom_bar(stat = "sum") 
 
-
-#### ISSUE: NO 2021 FIRES FOR CA! Check why this is ####
