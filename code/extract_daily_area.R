@@ -84,5 +84,7 @@ ggplot(daily_area[daily_area$state == "CA" & daily_area$year<2013,], aes(y = are
 plot(sort((daily_area$area)))
 
 
+ggplot(daily_area[daily_area$state == "CA" ,], aes(y = area, x = year)) + geom_bar(stat = "sum") 
 
 
+#### ISSUE: NO 2021 FIRES FOR CA! Check why this is ####
