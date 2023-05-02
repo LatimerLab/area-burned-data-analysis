@@ -20,3 +20,5 @@ cdfcomp(list(fires.pareto, fires.ln), xlogscale = TRUE, ylogscale = TRUE, legend
 gofstat(list(fires.pareto, fires.ln), fitnames = c("Pareto", "lognormal"))
 
 # Lognormal fits better than Pareto, although for CA fires in 2020 & 2021, it's getting more similar to Pareto. 
+
+# Next - compare earlier and later decade -- does distribution shift, or is fire just more prevalent? I guess that Coop paper already showed the distribution shifted. So is there anything more to learn? 
